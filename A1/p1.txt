@@ -1,0 +1,64 @@
+Value Iteration:
+policy: [0, 1, 1, 1]
+V: [ 31.49636306,  38.51527513,  43.935435  ,  54.1128575 ]
+nIterations: 58
+
+===========================================================
+
+Policy Iteration:
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 2
+
+===========================================================
+
+Modified Policy Iteration:
+nEvalIterations = 1
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 3
+
+nEvalIterations = 2
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 2
+
+nEvalIterations = 3
+policy: array([0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
+
+nEvalIterations = 4
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
+
+nEvalIterations = 5
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
+
+nEvalIterations = 6
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
+
+nEvalIterations = 7
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
+
+nEvalIterations = 8
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
+
+nEvalIterations = 9
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
+
+nEvalIterations = 10
+policy: [0, 1, 1, 1]
+V: [ 31.58510431,  38.60401638,  44.02417625,  54.20159875]
+nIterations: 1
