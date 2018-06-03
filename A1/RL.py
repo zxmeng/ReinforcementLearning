@@ -59,11 +59,11 @@ class RL:
         Q = np.zeros([self.mdp.nActions,self.mdp.nStates])
         policy = np.zeros(self.mdp.nStates,int)
         count = np.ones([self.mdp.nActions,self.mdp.nStates])
+        cum_reward = np.zeros(nEpisodes)
 
         Q = initialQ
         for i in range(nEpisodes):
             state = s0
-            cum_reward = 0.0
             for j in range(nSteps):
                 action = 0
                 p = random.uniform(0, 1)
@@ -72,14 +72,13 @@ class RL:
                 else:
                     action = np.argmax(Q[:,state])
                 count[action, state] += 1
-                reward, nextState = self.sampleRewardAndNextState(state, action)
-                cum_reward += reward
+                [reward, nextState] = self.sampleRewardAndNextState(state, action)
+                cum_reward[i] += reward
 
                 Q[action, state] = Q[action, state] + 1.0 / count[action, state] * (reward + self.mdp.discount * max(Q[:,nextState] - Q[action, state]) )
                 state = nextState
 
-            # print("Episode: " + str(i) + ", cum reward: " + str(cum_reward))
         for i in range(self.mdp.nStates):
             policy[i] = np.argmax(Q[:,i])
 
-        return [Q,policy]    
+        return [Q,policy,cum_reward]    

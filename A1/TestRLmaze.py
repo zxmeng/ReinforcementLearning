@@ -305,19 +305,70 @@ mdp = MDP.MDP(T,R,discount)
 rlProblem = RL.RL(mdp,np.random.normal)
 
 # Test Q-learning
-[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
-print "\nQ-learning results"
+Q = np.zeros([mdp.nActions,mdp.nStates])
+policy = np.zeros(mdp.nStates,int)
+cum_reward = np.zeros(200)
+for i in range(100):
+  [Q_t,policy_t,cum_reward_t] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
+  Q += Q_t
+  cum_reward += cum_reward_t
+
+Q /= 100.0
+for i in range(mdp.nStates):
+  policy[i] = np.argmax(Q[:,i])
+cum_reward /= 100.0
+
 print Q
 print policy
-[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.1)
-print "\nQ-learning results"
+print cum_reward
+
+Q = np.zeros([mdp.nActions,mdp.nStates])
+policy = np.zeros(mdp.nStates,int)
+cum_reward = np.zeros(200)
+for i in range(100):
+  [Q_t,policy_t,cum_reward_t] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.1)
+  Q += Q_t
+  cum_reward += cum_reward_t
+
+Q /= 100.0
+for i in range(mdp.nStates):
+  policy[i] = np.argmax(Q[:,i])
+cum_reward /= 100.0
+
 print Q
 print policy
-[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.3)
-print "\nQ-learning results"
+print cum_reward
+
+Q = np.zeros([mdp.nActions,mdp.nStates])
+policy = np.zeros(mdp.nStates,int)
+cum_reward = np.zeros(200)
+for i in range(100):
+  [Q_t,policy_t,cum_reward_t] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.3)
+  Q += Q_t
+  cum_reward += cum_reward_t
+
+Q /= 100.0
+for i in range(mdp.nStates):
+  policy[i] = np.argmax(Q[:,i])
+cum_reward /= 100.0
+
 print Q
 print policy
-[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.5)
-print "\nQ-learning results"
+print cum_reward
+
+Q = np.zeros([mdp.nActions,mdp.nStates])
+policy = np.zeros(mdp.nStates,int)
+cum_reward = np.zeros(200)
+for i in range(100):
+  [Q_t,policy_t,cum_reward_t] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.5)
+  Q += Q_t
+  cum_reward += cum_reward_t
+
+Q /= 100.0
+for i in range(mdp.nStates):
+  policy[i] = np.argmax(Q[:,i])
+cum_reward /= 100.0
+
 print Q
 print policy
+print cum_reward

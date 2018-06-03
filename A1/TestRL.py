@@ -13,8 +13,9 @@ rlProblem = RL.RL(mdp,np.random.normal)
 # Test Q-learning 
 for i in range(1):
 	epsilon = 0.3
-	[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=201,nSteps=100,epsilon=epsilon)
+	[Q,policy,cum_reward] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=201,nSteps=100,epsilon=epsilon)
 	print "\nQ-learning results"
-	print("epsilon: ", epsilon)
+	print "epsilon: " + str(epsilon)
 	print Q
 	print policy
+	print cum_reward
