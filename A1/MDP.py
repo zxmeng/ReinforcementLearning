@@ -164,12 +164,16 @@ class MDP:
         epsilon = tolerance
 
         V = initialV
+        R = np.zeros(self.nStates)
+        T = np.zeros((self.nStates, self.nStates))
+        for i in range(self.nStates):
+            R[i] = self.R[policy[i], i]
+            T[i] = self.T[policy[i], i]
 
         while iterId < nIterations and epsilon >= tolerance:
             iterId += 1
             prev = copy.deepcopy(V)
-            V = self.evaluatePolicy(policy)
-            policy = self.extractPolicy(V)
+            V = R + self.discount * np.matmul(T, V)
             epsilon = np.linalg.norm(V - prev, np.inf)
 
         return [V,iterId,epsilon]
