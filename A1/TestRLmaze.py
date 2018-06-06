@@ -305,6 +305,7 @@ mdp = MDP.MDP(T,R,discount)
 rlProblem = RL.RL(mdp,np.random.normal)
 
 # Test Q-learning
+print("\nepsilon = 0.05")
 Q = np.zeros([mdp.nActions,mdp.nStates])
 policy = np.zeros(mdp.nStates,int)
 c_reward = np.zeros(200)
@@ -322,6 +323,7 @@ print Q
 print policy
 print c_reward
 
+print("\nepsilon = 0.1")
 Q = np.zeros([mdp.nActions,mdp.nStates])
 policy = np.zeros(mdp.nStates,int)
 c_reward = np.zeros(200)
@@ -339,6 +341,7 @@ print Q
 print policy
 print c_reward
 
+print("\nepsilon = 0.3")
 Q = np.zeros([mdp.nActions,mdp.nStates])
 policy = np.zeros(mdp.nStates,int)
 c_reward = np.zeros(200)
@@ -356,6 +359,7 @@ print Q
 print policy
 print c_reward
 
+print("\nepsilon = 0.5")
 Q = np.zeros([mdp.nActions,mdp.nStates])
 policy = np.zeros(mdp.nStates,int)
 c_reward = np.zeros(200)
