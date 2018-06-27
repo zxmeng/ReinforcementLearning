@@ -1,5 +1,5 @@
 import numpy as np
-import copy
+import random
 import MDP
 
 class RL2:
@@ -59,6 +59,25 @@ class RL2:
         
         return action
 
+    def extractPolicy(self,V,R,T):
+        '''Procedure to extract a policy from a value function
+        pi <-- argmax_a R^a + gamma T^a V
+
+        Inputs:
+        V -- Value function: array of |S| entries
+
+        Output:
+        policy -- Policy: array of |S| entries'''
+
+        # temporary values to ensure that the code compiles until this
+        # function is coded
+        policy = np.zeros(self.mdp.nStates)
+        res = np.zeros((self.mdp.nActions, self.mdp.nStates))
+        for j in range(self.mdp.nActions):
+            res[j] = R[j] + self.mdp.discount * np.matmul(T[j], V)
+        policy = np.argmax(res, axis=0)
+        return policy 
+
     def modelBasedRL(self,s0,defaultT,initialR,nEpisodes,nSteps,epsilon=0):
         '''Model-based Reinforcement Learning with epsilon greedy 
         exploration.  This function should use value iteration,
@@ -77,12 +96,37 @@ class RL2:
         policy -- final policy
         '''
 
-        # temporary values to ensure that the code compiles until this
-        # function is coded
         V = np.zeros(self.mdp.nStates)
         policy = np.zeros(self.mdp.nStates,int)
 
-        return [V,policy]    
+        count_sa = np.zeros((self.mdp.nStates, self.mdp.nActions)).astype(float)
+        count_sas = np.zeros((self.mdp.nStates, self.mdp.nActions, self.mdp.nStates)).astype(float)
+
+        c_reward = np.zeros(nEpisodes)
+        for i in range(nEpisodes):
+            state = s0
+            R = initialR
+            T = defaultT
+            for j in range(nSteps):
+                action = np.argmax(R[:,state])
+                if random.uniform(0, 1) < epsilon:
+                    action = random.randint(0, self.mdp.nActions-1)
+
+                reward, nextState = self.sampleRewardAndNextState(state, action)
+                c_reward[i] += reward * (self.mdp.discount ** j)
+
+                count_sa[state, action] += 1.0
+                count_sas[state, action, nextState] += 1.0
+
+                T[action, state, :] = np.divide(count_sas[state, action, :], count_sa[state, action])
+                R[action, state] = (reward + (count_sa[state, action] - 1) * R[action, state]) / count_sa[state, action]
+
+                V[state] = np.amax(R[:, state] + self.mdp.discount * np.sum(np.multiply(T[:, state, :], V[nextState]), axis=1))
+                state = nextState
+
+            policy = self.extractPolicy(V, R, T)
+
+        return [V, policy, c_reward] 
 
     def epsilonGreedyBandit(self,nIterations):
         '''Epsilon greedy algorithm for bandits (assume no discount factor)
@@ -94,9 +138,18 @@ class RL2:
         empiricalMeans -- empirical average of rewards for each arm (array of |A| entries)
         '''
 
-        # temporary values to ensure that the code compiles until this
-        # function is coded
-        empiricalMeans = np.zeros(self.mdp.nActions)
+        empiricalMeans = np.zeros(self.mdp.nActions).astype(float)
+        count = np.zeros(self.mdp.nActions).astype(float)
+        epsilon = 1.0 / nIterations
+
+        for i in range(nIterations):
+            action = np.argmax(empiricalMeans)
+            if random.uniform(0, 1) < epsilon:
+                action = random.randint(0, self.mdp.nActions-1)
+
+            reward = self.sampleReward(self.mdp.R[action])
+            empiricalMeans[action] = (empiricalMeans[action] * count[action] + reward) / (count[action] + 1.0)
+            count[action] += 1.0
 
         return empiricalMeans
 
@@ -112,11 +165,28 @@ class RL2:
         empiricalMeans -- empirical average of rewards for each arm (array of |A| entries)
         '''
 
-        # temporary values to ensure that the code compiles until this
-        # function is coded
-        empiricalMeans = np.zeros(self.mdp.nActions)
+        empiricalMeans = np.zeros(self.mdp.nActions).astype(float)
+        count = np.zeros(self.mdp.nActions).astype(float)
 
-        return empiricalMeans
+        for i in range(nIterations):
+            # sample k rewards for each action
+            avg_rewards = np.zeros(self.mdp.nActions).astype(float)
+            for a in range(self.mdp.nActions):
+                avg_rewards[a] = np.average(np.random.beta(prior[a,0], prior[a,1], k))
+
+            # execute best action and receive reward
+            action = np.argmax(avg_rewards)
+            reward = self.sampleReward(self.mdp.R[action])
+            empiricalMeans[action] += reward
+            count[action] += 1.0
+
+            # update prior
+            if reward == 1:
+                prior[action, 0] += 1
+            else:
+                prior[action, 1] += 1
+
+        return np.divide(empiricalMeans, count)
 
     def UCBbandit(self,nIterations):
         '''Upper confidence bound algorithm for bandits (assume no discount factor)
@@ -128,9 +198,14 @@ class RL2:
         empiricalMeans -- empirical average of rewards for each arm (array of |A| entries)
         '''
 
-        # temporary values to ensure that the code compiles until this
-        # function is coded
-        empiricalMeans = np.zeros(self.mdp.nActions)
+        empiricalMeans = np.zeros(self.mdp.nActions).astype(float)
+        count = np.zeros(self.mdp.nActions).astype(float)
+
+        for i in range(nIterations):
+            action = np.argmax(empiricalMeans + np.sqrt(np.divide(2.0 * np.log(self.mdp.nActions), count + 1.0)))
+            reward = self.sampleReward(self.mdp.R[action])
+            empiricalMeans[action] = (empiricalMeans[action] * count[action] + reward) / (count[action] + 1.0)
+            count[action] += 1.0
 
         return empiricalMeans
 
@@ -152,6 +227,7 @@ class RL2:
         # policyParams = np.zeros((self.mdp.nActions,self.mdp.nStates))
         policyParams = initialPolicyParams
 
+        c_reward = np.zeros(nEpisodes)
         for i in range(nEpisodes):
             states = np.zeros(nSteps).astype(int)
             actions = np.zeros(nSteps).astype(int)
@@ -163,32 +239,23 @@ class RL2:
                 states[j] = nextState
                 actions[j] = self.sampleSoftmaxPolicy(policyParams, states[j])
                 rewards[j], nextState = self.sampleRewardAndNextState(states[j], actions[j])
+                c_reward[i] += rewards[j] * (self.mdp.discount ** j)
             
-            count = np.ones([self.mdp.nActions,self.mdp.nStates])
-            # prev_log_pi = np.log(np.ones((self.mdp.nActions, self.mdp.nStates)) / self.mdp.nActions)
-            # prev_log_pi = np.zeros((self.mdp.nActions, self.mdp.nStates))
-            # loop for each step 
-            # for s in range(self.mdp.nStates):
-            #     prev_log_pi[:, s] = np.log(self.softmax(policyParams[:, s]))
-
+            count = np.ones([self.mdp.nActions,self.mdp.nStates]).astype(float)
             for n in range(nSteps):
-                # calculate g_n
+                # calculate sum of discounted rewards
                 g_n = 0.0
-                for t in range(nSteps - n):
-                    g_n += (self.mdp.discount ** t) * rewards[n+t]
+                for t in range(n, nSteps):
+                    g_n += (self.mdp.discount ** t) * rewards[t]
 
-                # to calculate the gradient of log pi
-                # cur_log_pi = np.zeros((self.mdp.nActions, self.mdp.nStates))
-                # for s in range(self.mdp.nStates):
-                #     cur_log_pi[:,s] = np.log(self.softmax(policyParams[:,s]))
-                # delta = cur_log_pi[actions[n],states[n]] - prev_log_pi[actions[n],states[n]]
-
+                # update learning rate / count n(s,a)
                 count[actions[n],states[n]] += 1.0
-                # update policyParams by stochastic policy gradient
-                # policyParams += alpha[actions[n],states[n]] * (self.mdp.discount ** n) * g_n * delta
-                gradient = 1.0 - self.softmax(policyParams[:,states[n]])
-                for a in range(self.mdp.nActions):
-                    policyParams[a, states[n]] += (1.0 / count[a,states[n]]) * (self.mdp.discount ** n) * g_n * gradient[a]
-                # prev_log_pi = copy.deepcopy(cur_log_pi)
+                # calculate partial derivative for log softmax
+                gradient = - self.softmax(policyParams[:,states[n]])
+                gradient[actions[n]] += 1.0
 
-        return policyParams    
+                # update policyParams by stochastic policy gradient
+                for a in range(self.mdp.nActions):
+                    policyParams[a, states[n]] += (1.0 / count[a,states[n]]) * g_n * gradient[a]
+
+        return policyParams, c_reward
