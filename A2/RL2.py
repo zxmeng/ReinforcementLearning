@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import MDP
 
 class RL2:
@@ -34,6 +35,11 @@ class RL2:
         nextState = np.where(cumProb >= np.random.rand(1))[0][0]
         return [reward,nextState]
 
+    def softmax(self, x):
+        pi = np.exp(x - np.max(x))
+        pi /= pi.sum()
+        return pi
+
     def sampleSoftmaxPolicy(self,policyParams,state):
         '''Procedure to sample an action from stochastic policy
         pi(a|s) = exp(policyParams(a,s))/[sum_a' exp(policyParams(a',s))])
@@ -47,9 +53,9 @@ class RL2:
         action -- sampled action
         '''
 
-        # temporary value to ensure that the code compiles until this
-        # function is coded
-        action = 0
+        pi = self.softmax(policyParams[:,state])
+        cumProb = np.cumsum(pi)
+        action = np.where(cumProb >= np.random.rand(1))[0][0]
         
         return action
 
@@ -143,8 +149,46 @@ class RL2:
         policyParams -- parameters of the final policy (array of |A|x|S| entries)
         '''
 
-        # temporary values to ensure that the code compiles until this
-        # function is coded
-        policyParams = np.zeros((self.mdp.nActions,self.mdp.nStates))
+        # policyParams = np.zeros((self.mdp.nActions,self.mdp.nStates))
+        policyParams = initialPolicyParams
+
+        for i in range(nEpisodes):
+            states = np.zeros(nSteps).astype(int)
+            actions = np.zeros(nSteps).astype(int)
+            rewards = np.zeros(nSteps).astype(float)
+
+            # generate episode s, a, r
+            nextState = s0
+            for j in range(nSteps):
+                states[j] = nextState
+                actions[j] = self.sampleSoftmaxPolicy(policyParams, states[j])
+                rewards[j], nextState = self.sampleRewardAndNextState(states[j], actions[j])
             
+            count = np.ones([self.mdp.nActions,self.mdp.nStates])
+            # prev_log_pi = np.log(np.ones((self.mdp.nActions, self.mdp.nStates)) / self.mdp.nActions)
+            # prev_log_pi = np.zeros((self.mdp.nActions, self.mdp.nStates))
+            # loop for each step 
+            # for s in range(self.mdp.nStates):
+            #     prev_log_pi[:, s] = np.log(self.softmax(policyParams[:, s]))
+
+            for n in range(nSteps):
+                # calculate g_n
+                g_n = 0.0
+                for t in range(nSteps - n):
+                    g_n += (self.mdp.discount ** t) * rewards[n+t]
+
+                # to calculate the gradient of log pi
+                # cur_log_pi = np.zeros((self.mdp.nActions, self.mdp.nStates))
+                # for s in range(self.mdp.nStates):
+                #     cur_log_pi[:,s] = np.log(self.softmax(policyParams[:,s]))
+                # delta = cur_log_pi[actions[n],states[n]] - prev_log_pi[actions[n],states[n]]
+
+                count[actions[n],states[n]] += 1.0
+                # update policyParams by stochastic policy gradient
+                # policyParams += alpha[actions[n],states[n]] * (self.mdp.discount ** n) * g_n * delta
+                gradient = 1.0 - self.softmax(policyParams[:,states[n]])
+                for a in range(self.mdp.nActions):
+                    policyParams[a, states[n]] += (1.0 / count[a,states[n]]) * (self.mdp.discount ** n) * g_n * gradient[a]
+                # prev_log_pi = copy.deepcopy(cur_log_pi)
+
         return policyParams    
