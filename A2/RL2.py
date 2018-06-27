@@ -112,9 +112,13 @@ class RL2:
                 if random.uniform(0, 1) < epsilon:
                     action = random.randint(0, self.mdp.nActions-1)
 
-                reward, nextState = self.sampleRewardAndNextState(state, action)
-                c_reward[i] += reward * (self.mdp.discount ** j)
+                # reward, nextState = self.sampleRewardAndNextState(state, action)
+                reward = self.sampleReward(R[action,state])
+                cumProb = np.cumsum(T[action,state,:])
+                nextState = np.where(cumProb >= np.random.rand(1))[0][0]
 
+                c_reward[i] += reward * (self.mdp.discount ** j)
+                
                 count_sa[state, action] += 1.0
                 count_sas[state, action, nextState] += 1.0
 
