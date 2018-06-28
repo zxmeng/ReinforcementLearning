@@ -99,7 +99,7 @@ class RL2:
                 count_sas[state, action, nextState] += 1.0
 
                 model.T[action, state, :] = np.divide(count_sas[state, action, :], count_sa[state, action])
-                model.R[action, state] = (reward + (count_sa[state, action] - 1) * model.R[action, state]) / count_sa[state, action]
+                model.R[action, state] = (reward + (count_sa[state, action]-1.0) * model.R[action, state]) / count_sa[state, action]
                 policy, V, _ = model.policyIteration(policy)
 
                 state = nextState
@@ -128,7 +128,7 @@ class RL2:
                 action = random.randint(0, self.mdp.nActions-1)
 
             reward = self.sampleReward(self.mdp.R[action])
-            empiricalMeans[action] = (empiricalMeans[action] * count[action] + reward) / (count[action] + 1.0)
+            empiricalMeans[action] = (empiricalMeans[action] * count[action] + reward) / (count[action]+1.0)
             count[action] += 1.0
             c_reward[i] = reward
 
@@ -186,9 +186,9 @@ class RL2:
         c_reward = np.zeros(nIterations)
 
         for i in range(nIterations):
-            action = np.argmax(empiricalMeans + np.sqrt(np.divide(2.0 * np.log(self.mdp.nActions), count + 1.0)))
+            action = np.argmax(empiricalMeans + np.sqrt(2.0 * np.log(i+1.0) / (count+1.0)))
             reward = self.sampleReward(self.mdp.R[action])
-            empiricalMeans[action] = (empiricalMeans[action] * count[action] + reward) / (count[action] + 1.0)
+            empiricalMeans[action] = (empiricalMeans[action]*count[action] + reward) / (count[action]+1.0)
             count[action] += 1.0
             c_reward[i] = reward
 
@@ -211,7 +211,7 @@ class RL2:
 
         # policyParams = np.zeros((self.mdp.nActions,self.mdp.nStates))
         policyParams = initialPolicyParams
-
+        alpha = 0.01
         c_reward = np.zeros(nEpisodes)
         for i in range(nEpisodes):
             states = np.zeros(nSteps).astype(int)
@@ -241,6 +241,56 @@ class RL2:
 
                 # update policyParams by stochastic policy gradient
                 for a in range(self.mdp.nActions):
-                    policyParams[a, states[n]] += (1.0 / count[a,states[n]]) * g_n * gradient[a]
+                    # policyParams[a, states[n]] += (1.0 / count[a,states[n]]) * g_n * gradient[a]
+                    policyParams[a, states[n]] += alpha * g_n * gradient[a]
 
         return policyParams, c_reward
+
+    def qLearning(self,s0,initialQ,nEpisodes,nSteps,epsilon=0,temperature=0):
+        '''qLearning algorithm.  Epsilon exploration and Boltzmann exploration
+        are combined in one procedure by sampling a random action with 
+        probabilty epsilon and performing Boltzmann exploration otherwise.  
+        When epsilon and temperature are set to 0, there is no exploration.
+
+        Inputs:
+        s0 -- initial state
+        initialQ -- initial Q function (|A|x|S| array)
+        nEpisodes -- # of episodes (one episode consists of a trajectory of nSteps that starts in s0
+        nSteps -- # of steps per episode
+        epsilon -- probability with which an action is chosen at random
+        temperature -- parameter that regulates Boltzmann exploration
+
+        Outputs: 
+        Q -- final Q function (|A|x|S| array)
+        policy -- final policy
+        '''
+
+        # temporary values to ensure that the code compiles until this
+        # function is coded
+        Q = np.zeros([self.mdp.nActions,self.mdp.nStates])
+        policy = np.zeros(self.mdp.nStates,int)
+        count = np.ones([self.mdp.nActions,self.mdp.nStates])
+        c_reward = np.zeros(nEpisodes)
+
+        Q = initialQ
+        for i in range(nEpisodes):
+            state = s0
+            for j in range(nSteps):
+                action = 0
+                p = random.uniform(0, 1)
+                if p <= epsilon:
+                    action = random.randint(0, self.mdp.nActions-1)
+                else:
+                    action = np.argmax(Q[:,state])
+                    
+                count[action, state] += 1
+                [reward, nextState] = self.sampleRewardAndNextState(state, action)
+                c_reward[i] += reward * (self.mdp.discount ** j)
+
+                Q[action, state] = Q[action, state] + 1.0 / count[action, state] * (reward + self.mdp.discount * max(Q[:,nextState] - Q[action, state]) )
+                state = nextState
+
+        for i in range(self.mdp.nStates):
+            policy[i] = np.argmax(Q[:,i])
+
+        return [Q,policy,c_reward]    

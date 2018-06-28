@@ -314,20 +314,26 @@ print "\nREINFORCE results"
 print policy
 print c_reward
 
-# # Test model-based RL
-# c_reward = np.zeros(200)
-# for _ in range(100):
-#   [V, policy, c_reward_t] = rlProblem.modelBasedRL(s0=0,defaultT=np.ones([mdp.nActions,mdp.nStates,mdp.nStates])/mdp.nStates,initialR=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.3)
-#   c_reward += c_reward_t
-# c_reward /= 100.0
+# Test model-based RL
+c_reward = np.zeros(200)
+for _ in range(100):
+  [V, policy, c_reward_t] = rlProblem.modelBasedRL(s0=0,defaultT=np.ones([mdp.nActions,mdp.nStates,mdp.nStates])/mdp.nStates,initialR=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.3)
+  c_reward += c_reward_t
+c_reward /= 100.0
 
-# print "\nmodel-based RL results"
-# print V
-# print policy
-# print c_reward
+print "\nmodel-based RL results"
+print V
+print policy
+print c_reward
 
-# Test Q-learning
-#[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
-#print "\nQ-learning results"
-#print Q
-#print policy
+#Test Q-learning
+c_reward = np.zeros(200)
+for _ in range(100):
+  [Q,policy, c_reward_t] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
+  c_reward += c_reward_t
+c_reward /= 100.0
+
+print "\nQ-learning results"
+print Q
+print policy
+print c_reward
