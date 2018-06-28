@@ -25,16 +25,43 @@ mdp = MDP.MDP(T,R,discount)
 banditProblem = RL2.RL2(mdp,sampleBernoulli)
 
 # Test epsilon greedy strategy
-empiricalMeans = banditProblem.epsilonGreedyBandit(nIterations=200)
+c_reward = np.zeros(200)
+e_means = np.zeros(mdp.nActions)
+for _ in range(1000):
+	empiricalMeans_t, c_reward_t = banditProblem.epsilonGreedyBandit(nIterations=200)
+	e_means += empiricalMeans_t
+	c_reward += c_reward_t
+e_means /= 1000.0
+c_reward /= 1000.0
+
 print "\nepsilonGreedyBandit results"
-print empiricalMeans
+print e_means
+print c_reward
 
 # Test Thompson sampling strategy
-empiricalMeans = banditProblem.thompsonSamplingBandit(prior=np.ones([mdp.nActions,2]),nIterations=200)
+c_reward = np.zeros(200)
+e_means = np.zeros(mdp.nActions)
+for _ in range(1000):
+	empiricalMeans_t, c_reward_t = banditProblem.thompsonSamplingBandit(prior=np.ones([mdp.nActions,2]),nIterations=200)
+	e_means += empiricalMeans_t
+	c_reward += c_reward_t
+e_means /= 1000.0
+c_reward /= 1000.0
+
 print "\nthompsonSamplingBandit results"
-print empiricalMeans
+print e_means
+print c_reward
 
 # Test UCB strategy
-empiricalMeans = banditProblem.UCBbandit(nIterations=200)
+c_reward = np.zeros(200)
+e_means = np.zeros(mdp.nActions)
+for _ in range(1000):
+	empiricalMeans_t, c_reward_t = banditProblem.UCBbandit(nIterations=200)
+	e_means += empiricalMeans_t
+	c_reward += c_reward_t
+e_means /= 1000.0
+c_reward /= 1000.0
+
 print "\nUCBbandit results"
-print empiricalMeans
+print e_means
+print c_reward

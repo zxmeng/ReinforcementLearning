@@ -59,25 +59,6 @@ class RL2:
         
         return action
 
-    def extractPolicy(self,V,R,T):
-        '''Procedure to extract a policy from a value function
-        pi <-- argmax_a R^a + gamma T^a V
-
-        Inputs:
-        V -- Value function: array of |S| entries
-
-        Output:
-        policy -- Policy: array of |S| entries'''
-
-        # temporary values to ensure that the code compiles until this
-        # function is coded
-        policy = np.zeros(self.mdp.nStates)
-        res = np.zeros((self.mdp.nActions, self.mdp.nStates))
-        for j in range(self.mdp.nActions):
-            res[j] = R[j] + self.mdp.discount * np.matmul(T[j], V)
-        policy = np.argmax(res, axis=0)
-        return policy 
-
     def modelBasedRL(self,s0,defaultT,initialR,nEpisodes,nSteps,epsilon=0):
         '''Model-based Reinforcement Learning with epsilon greedy 
         exploration.  This function should use value iteration,
@@ -96,39 +77,32 @@ class RL2:
         policy -- final policy
         '''
 
-        V = np.zeros(self.mdp.nStates)
-        policy = np.zeros(self.mdp.nStates,int)
+        model = MDP.MDP(defaultT, initialR, self.mdp.discount)
+        V = np.zeros(model.nStates)
+        policy = np.zeros(model.nStates,int)
 
-        count_sa = np.zeros((self.mdp.nStates, self.mdp.nActions)).astype(float)
-        count_sas = np.zeros((self.mdp.nStates, self.mdp.nActions, self.mdp.nStates)).astype(float)
-
+        count_sa = np.zeros((model.nStates, model.nActions)).astype(float)
+        count_sas = np.zeros((model.nStates, model.nActions, model.nStates)).astype(float)
+        
         c_reward = np.zeros(nEpisodes)
         for i in range(nEpisodes):
             state = s0
-            R = initialR
-            T = defaultT
             for j in range(nSteps):
-                action = np.argmax(R[:,state])
+                action = policy[state]
                 if random.uniform(0, 1) < epsilon:
-                    action = random.randint(0, self.mdp.nActions-1)
+                    action = random.randint(0, model.nActions-1)
 
-                # reward, nextState = self.sampleRewardAndNextState(state, action)
-                reward = self.sampleReward(R[action,state])
-                cumProb = np.cumsum(T[action,state,:])
-                nextState = np.where(cumProb >= np.random.rand(1))[0][0]
+                reward, nextState = self.sampleRewardAndNextState(state, action)
+                c_reward[i] += reward * (model.discount ** j)
 
-                c_reward[i] += reward * (self.mdp.discount ** j)
-                
                 count_sa[state, action] += 1.0
                 count_sas[state, action, nextState] += 1.0
 
-                T[action, state, :] = np.divide(count_sas[state, action, :], count_sa[state, action])
-                R[action, state] = (reward + (count_sa[state, action] - 1) * R[action, state]) / count_sa[state, action]
+                model.T[action, state, :] = np.divide(count_sas[state, action, :], count_sa[state, action])
+                model.R[action, state] = (reward + (count_sa[state, action] - 1) * model.R[action, state]) / count_sa[state, action]
+                policy, V, _ = model.policyIteration(policy)
 
-                V[state] = np.amax(R[:, state] + self.mdp.discount * np.sum(np.multiply(T[:, state, :], V[nextState]), axis=1))
                 state = nextState
-
-            policy = self.extractPolicy(V, R, T)
 
         return [V, policy, c_reward] 
 
@@ -144,9 +118,11 @@ class RL2:
 
         empiricalMeans = np.zeros(self.mdp.nActions).astype(float)
         count = np.zeros(self.mdp.nActions).astype(float)
-        epsilon = 1.0 / nIterations
+        c_reward = np.zeros(nIterations)
 
         for i in range(nIterations):
+            # epsilon = 1.0 / (i + 1.0)
+            epsilon = 0.1
             action = np.argmax(empiricalMeans)
             if random.uniform(0, 1) < epsilon:
                 action = random.randint(0, self.mdp.nActions-1)
@@ -154,8 +130,9 @@ class RL2:
             reward = self.sampleReward(self.mdp.R[action])
             empiricalMeans[action] = (empiricalMeans[action] * count[action] + reward) / (count[action] + 1.0)
             count[action] += 1.0
+            c_reward[i] = reward
 
-        return empiricalMeans
+        return empiricalMeans, c_reward
 
     def thompsonSamplingBandit(self,prior,nIterations,k=1):
         '''Thompson sampling algorithm for Bernoulli bandits (assume no discount factor)
@@ -171,6 +148,7 @@ class RL2:
 
         empiricalMeans = np.zeros(self.mdp.nActions).astype(float)
         count = np.zeros(self.mdp.nActions).astype(float)
+        c_reward = np.zeros(nIterations)
 
         for i in range(nIterations):
             # sample k rewards for each action
@@ -183,6 +161,7 @@ class RL2:
             reward = self.sampleReward(self.mdp.R[action])
             empiricalMeans[action] += reward
             count[action] += 1.0
+            c_reward[i] = reward
 
             # update prior
             if reward == 1:
@@ -190,7 +169,7 @@ class RL2:
             else:
                 prior[action, 1] += 1
 
-        return np.divide(empiricalMeans, count)
+        return np.divide(empiricalMeans, count), c_reward
 
     def UCBbandit(self,nIterations):
         '''Upper confidence bound algorithm for bandits (assume no discount factor)
@@ -204,14 +183,16 @@ class RL2:
 
         empiricalMeans = np.zeros(self.mdp.nActions).astype(float)
         count = np.zeros(self.mdp.nActions).astype(float)
+        c_reward = np.zeros(nIterations)
 
         for i in range(nIterations):
             action = np.argmax(empiricalMeans + np.sqrt(np.divide(2.0 * np.log(self.mdp.nActions), count + 1.0)))
             reward = self.sampleReward(self.mdp.R[action])
             empiricalMeans[action] = (empiricalMeans[action] * count[action] + reward) / (count[action] + 1.0)
             count[action] += 1.0
+            c_reward[i] = reward
 
-        return empiricalMeans
+        return empiricalMeans, c_reward
 
     def reinforce(self,s0,initialPolicyParams,nEpisodes,nSteps):
         '''reinforce algorithm.  Learn a stochastic policy of the form

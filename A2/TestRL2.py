@@ -25,17 +25,17 @@ mdp = MDP.MDP(T,R,discount)
 banditProblem = RL2.RL2(mdp,sampleBernoulli)
 
 # Test epsilon greedy strategy
-empiricalMeans = banditProblem.epsilonGreedyBandit(nIterations=200)
+empiricalMeans, c_reward = banditProblem.epsilonGreedyBandit(nIterations=200)
 print "\nepsilonGreedyBandit results"
 print empiricalMeans
 
 # Test Thompson sampling strategy
-empiricalMeans = banditProblem.thompsonSamplingBandit(prior=np.ones([mdp.nActions,2]),nIterations=200)
+empiricalMeans, c_reward = banditProblem.thompsonSamplingBandit(prior=np.ones([mdp.nActions,2]),nIterations=200)
 print "\nthompsonSamplingBandit results"
 print empiricalMeans
 
 # Test UCB strategy
-empiricalMeans = banditProblem.UCBbandit(nIterations=200)
+empiricalMeans, c_reward = banditProblem.UCBbandit(nIterations=200)
 print "\nUCBbandit results"
 print empiricalMeans
 

@@ -53,14 +53,14 @@ class MDP:
         V = initialV
 
         while iterId < nIterations and epsilon >= tolerance:
-                iterId += 1
-                prev = copy.deepcopy(V)
-                res = np.zeros((self.nActions, self.nStates))
-                for j in range(self.nActions):
-                    res[j] = self.R[j] + self.discount * np.matmul(self.T[j], V)
-                for j in range(self.nStates):
-                    V[j] = max(res[:,j])
-                epsilon = np.linalg.norm(V - prev, np.inf)
+            iterId += 1
+            prev = copy.deepcopy(V)
+            res = np.zeros((self.nActions, self.nStates))
+            for j in range(self.nActions):
+                res[j] = self.R[j] + self.discount * np.matmul(self.T[j], V)
+            for j in range(self.nStates):
+                V[j] = max(res[:,j])
+            epsilon = np.linalg.norm(V - prev, np.inf)
         
         return [V,iterId,epsilon]
 
